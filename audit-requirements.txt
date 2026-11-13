@@ -1,0 +1,4 @@
+httpx==0.28.1
+starlette==1.9.0
+uvicorn==0.54.0
+websockets==17.3

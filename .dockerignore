@@ -1,0 +1,4 @@
+*
+!Dockerfile.audit
+!audit-requirements.txt
+!audit_proxy.py

@@ -1,0 +1,14 @@
+# The gateway needs only HTTP/WebSocket libraries, not the browser image.
+ARG PYTHON_IMAGE=python:3.13-alpine
+FROM ${PYTHON_IMAGE}
+COPY audit-requirements.txt /tmp/audit-requirements.txt
+RUN apk upgrade --no-cache \
+    && python -m pip install --no-cache-dir -r /tmp/audit-requirements.txt \
+    && python -m pip uninstall -y pip \
+    && python -c 'import ensurepip, shutil; shutil.rmtree(ensurepip.__path__[0])' \
+    && rm /tmp/audit-requirements.txt
+# pip is build-only; removing it also removes its bundled dependencies.
+COPY audit_proxy.py /opt/home-browser/audit_proxy.py
+ENV HOME=/tmp
+USER 1000:1000
+ENTRYPOINT ["/usr/local/bin/python", "/opt/home-browser/audit_proxy.py"]

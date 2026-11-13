@@ -1,0 +1,62 @@
+# Optional audited variant; copy to docker-compose.yml and use .env.example.
+# Read AUDIT.md. Only loopback is published; use a private HTTPS tunnel for remote access.
+name: home-browser
+services:
+  chromium:
+    image: lscr.io/linuxserver/chromium:latest
+    container_name: home-chromium
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID:?Required}
+      PGID: ${PGID:?Required}
+      TZ: ${TZ:?Required}
+      CUSTOM_USER: ${CHROMIUM_GUI_USER:?Required}
+      PASSWORD: ${CHROMIUM_GUI_PASSWORD:?Required}
+      UMASK: "077"
+      DISABLE_SUDO: "true"
+      DISABLE_TERMINALS: "true"
+      CHROME_CLI: >-
+        --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1
+        --user-data-dir=/config/chromium-profile --no-first-run https://example.com
+    volumes:
+      - ./chromium-config:/config
+    ports:
+      - "127.0.0.1:13001:3001"
+      - "127.0.0.1:18000:8000"
+    shm_size: "1gb"
+  home-browser:
+    image: ghcr.io/d4vinci/scrapling:latest
+    container_name: home-browser
+    restart: unless-stopped
+    network_mode: "service:chromium"
+    depends_on:
+      - chromium
+    environment:
+      SCRAPLING_MCP_AUTH_TOKEN: ${SCRAPLING_MCP_AUTH_TOKEN:?Required}
+    command: ["mcp", "--http", "--host", "127.0.0.1", "--port", "8001", "--allowed-host", "localhost:18000", "--allowed-host", "127.0.0.1:18000"]
+    volumes:
+      - ./browser-data:/data
+    shm_size: "2gb"
+  audit:
+    build:
+      context: .
+      dockerfile: Dockerfile.audit
+    image: home-browser-audit:local
+    container_name: home-browser-audit
+    user: "${PUID:?Required}:${PGID:?Required}"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 256
+    restart: unless-stopped
+    network_mode: "service:chromium"
+    depends_on:
+      - chromium
+      - home-browser
+    environment:
+      SCRAPLING_MCP_AUTH_TOKEN: ${SCRAPLING_MCP_AUTH_TOKEN:?Required}
+    command: ["--clients", "/run/secrets/audit-clients.json", "--log", "/audit/events.jsonl", "--cdp-url", "http://127.0.0.1:9222"]
+    volumes:
+      - ./audit-clients.json:/run/secrets/audit-clients.json:ro
+      - ./audit-data:/audit

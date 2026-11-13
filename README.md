@@ -356,6 +356,8 @@ Use this checklist:
 
 ## Operations
 
+For a persistent, credential-attributed record of MCP tools and sanitized browsing destinations, see [the optional audit gateway](AUDIT.md). It also records separate, unattributed CDP page-target observations. This is operational history with explicit privacy and coverage limits, not proof that an unrecorded action did not occur.
+
 ### Stop the project
 
 ```bash

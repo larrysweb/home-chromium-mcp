@@ -8,6 +8,8 @@ docker-compose.yaml
 # Persistent browser data and reusable login state
 chromium-config/
 browser-data/
+audit-clients.json
+audit-data/
 *-state.json
 **/*-state.json
 
